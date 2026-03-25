@@ -1,4 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { randomUUID } from 'node:crypto';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { verificationRouter } from './routes/verification.js';
@@ -6,6 +8,7 @@ import { invoiceRouter } from './routes/invoice.js';
 import { stellarRouter } from './routes/stellar.js';
 import { catalogRouter } from './routes/catalog.js';
 import { jobsRouter } from './routes/jobs.js';
+import { healthRouter } from './routes/health.js';
 import { startJobs } from './jobs/index.js';
 
 dotenv.config();
@@ -58,10 +61,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-// Health check
-app.get('/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok', service: 'agenticpay-backend' });
-});
+// Health & Readiness checks
+app.use(healthRouter);
 
 // API routes
 app.use('/api/v1/verification', verificationRouter);

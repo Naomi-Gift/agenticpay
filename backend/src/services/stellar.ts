@@ -6,7 +6,7 @@ const HORIZON_URL =
     ? 'https://horizon.stellar.org'
     : 'https://horizon-testnet.stellar.org';
 
-const server = new StellarSdk.Horizon.Server(HORIZON_URL);
+export const server = new StellarSdk.Horizon.Server(HORIZON_URL);
 
 export function isValidStellarAddress(address: string) {
   if (!address?.trim()) {
