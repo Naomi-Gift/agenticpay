@@ -9,9 +9,12 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { InvoiceCardSkeleton } from '@/components/ui/loading-skeletons';
 import { EmptyState } from '@/components/empty/EmptyState';
+import { formatDateInTimeZone } from '@/lib/utils';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function InvoicesPage() {
   const { invoices, loading } = useDashboardData();
+  const timezone = useAuthStore((state) => state.timezone);
   const [filter, setFilter] = useState<'all' | 'paid' | 'pending' | 'overdue'>('all');
 
   const filteredInvoices =
@@ -104,7 +107,7 @@ export default function InvoicesPage() {
                         <h3 className="font-semibold text-gray-900">{invoice.projectTitle}</h3>
                         <p className="text-sm text-gray-600">{invoice.milestoneTitle}</p>
                         <p className="text-xs text-gray-500 mt-1">
-                          Ref #{invoice.id} • {new Date(invoice.generatedAt).toLocaleDateString()}
+                          Ref #{invoice.id} • {formatDateInTimeZone(invoice.generatedAt, timezone)}
                         </p>
                       </div>
                     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useThemeStore } from '@/store/useThemeStore';
 import { useRouter } from 'next/navigation';
@@ -19,13 +19,27 @@ import { toast } from 'sonner';
 import { useDisconnect } from 'wagmi';
 import { web3auth } from '@/lib/web3auth';
 import { ThemeSettingsModal } from '@/components/theme/ThemeSettingsModal';
+import { TimezoneSettingsModal } from '@/components/settings/TimezoneSettingsModal';
+import { getBrowserTimeZone, isValidTimeZone } from '@/lib/utils';
 
 export function Header() {
-  const { name, email, address, logout } = useAuthStore();
-  const { isDark, mode, toggle, setIsDark } = useThemeStore();
+  const { name, email, address, timezone, logout, setTimezone } = useAuthStore();
+  const { isDark, mode, setIsDark } = useThemeStore();
   const { disconnect } = useDisconnect();
   const router = useRouter();
   const [themeSettingsOpen, setThemeSettingsOpen] = useState(false);
+  const [timezoneSettingsOpen, setTimezoneSettingsOpen] = useState(false);
+
+  useEffect(() => {
+    if (timezone) {
+      return;
+    }
+
+    const detectedTimeZone = getBrowserTimeZone();
+    if (detectedTimeZone && isValidTimeZone(detectedTimeZone)) {
+      setTimezone(detectedTimeZone);
+    }
+  }, [setTimezone, timezone]);
 
   const handleLogout = async () => {
     disconnect();
@@ -139,9 +153,9 @@ export function Header() {
                   <User className="mr-2 h-4 w-4" />
                   Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTimezoneSettingsOpen(true)}>
                   <Settings className="mr-2 h-4 w-4" />
-                  Settings
+                  Timezone Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-red-600">
@@ -155,6 +169,10 @@ export function Header() {
       </header>
 
       <ThemeSettingsModal open={themeSettingsOpen} onClose={() => setThemeSettingsOpen(false)} />
+      <TimezoneSettingsModal
+        open={timezoneSettingsOpen}
+        onClose={() => setTimezoneSettingsOpen(false)}
+      />
     </>
   );
 }

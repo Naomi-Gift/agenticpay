@@ -6,9 +6,12 @@ import { CheckCircle2, Clock, XCircle, ExternalLink, Wallet } from 'lucide-react
 import { motion } from 'framer-motion';
 import { PaymentCardSkeleton } from '@/components/ui/loading-skeletons';
 import { EmptyState } from '@/components/empty/EmptyState';
+import { formatDateTimeInTimeZone } from '@/lib/utils';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function PaymentsPage() {
   const { payments, loading } = useDashboardData();
+  const timezone = useAuthStore((state) => state.timezone);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -65,7 +68,7 @@ export default function PaymentsPage() {
                         {payment.type === 'milestone_payment' ? 'Milestone Payment' : 'Full Payment'}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
-                        {new Date(payment.timestamp).toLocaleString()}
+                        {formatDateTimeInTimeZone(payment.timestamp, timezone)}
                       </p>
                     </div>
                   </div>

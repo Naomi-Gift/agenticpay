@@ -14,11 +14,14 @@ import { useAgenticPay } from '@/lib/hooks/useAgenticPay';
 import { useAccount } from 'wagmi';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { formatDateInTimeZone } from '@/lib/utils';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function ProjectDetailPage() {
   const params = useParams();
   const projectId = params.id as string;
   const { address } = useAccount();
+  const timezone = useAuthStore((state) => state.timezone);
 
   const { useProjectDetail, fundProject, submitWork, approveWork, isPending, isConfirming, isConfirmed, error, arbitrator } = useAgenticPay();
   const { project, loading, refetch } = useProjectDetail(projectId);
@@ -132,7 +135,7 @@ export default function ProjectDetailPage() {
             <div>
               <p className="text-sm text-gray-600">Created</p>
               <p className="text-lg font-medium">
-                {new Date(project.createdAt).toLocaleDateString()}
+                {formatDateInTimeZone(project.createdAt, timezone)}
               </p>
             </div>
           </div>
@@ -281,7 +284,7 @@ export default function ProjectDetailPage() {
                     </p>
                     {milestone.dueDate && (
                       <p className="text-xs text-gray-500">
-                        Due: {new Date(milestone.dueDate).toLocaleDateString()}
+                        Due: {formatDateInTimeZone(milestone.dueDate, timezone)}
                       </p>
                     )}
                   </div>
