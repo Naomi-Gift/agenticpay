@@ -1,18 +1,52 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiError, apiCall } from './client';
+import { apiCall } from './client';
+import { OfflineActionQueuedError } from '../offline';
 
 describe('apiCall', () => {
   const originalFetch = global.fetch;
+  const originalNavigator = global.navigator;
+
+  const localStorageMock = (() => {
+    let store: Record<string, string> = {};
+    return {
+      getItem: (key: string) => store[key] ?? null,
+      setItem: (key: string, value: string) => {
+        store[key] = value;
+      },
+      removeItem: (key: string) => {
+        delete store[key];
+      },
+      clear: () => {
+        store = {};
+      },
+    };
+  })();
 
   beforeEach(() => {
     vi.useFakeTimers();
     vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    vi.stubGlobal('localStorage', localStorageMock);
+    vi.stubGlobal('window', {
+      localStorage: localStorageMock,
+      dispatchEvent: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    });
+    Object.defineProperty(global, 'navigator', {
+      value: { onLine: true },
+      configurable: true,
+    });
+    localStorageMock.clear();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     vi.useRealTimers();
     global.fetch = originalFetch;
+    Object.defineProperty(global, 'navigator', {
+      value: originalNavigator,
+      configurable: true,
+    });
   });
 
   it('retries retriable HTTP failures with exponential backoff', async () => {
@@ -54,7 +88,7 @@ describe('apiCall', () => {
 
     global.fetch = fetchMock as typeof fetch;
 
-    await expect(apiCall('/health')).rejects.toMatchObject<ApiError>({
+    await expect(apiCall('/health')).rejects.toMatchObject({
       name: 'ApiError',
       status: 400,
       message: 'Bad request',
@@ -63,14 +97,37 @@ describe('apiCall', () => {
   });
 
   it('does not retry aborted requests', async () => {
+    // Use real timers to avoid timeout
+    vi.useRealTimers();
+
     const abortError = new DOMException('The operation was aborted.', 'AbortError');
     const fetchMock = vi.fn().mockRejectedValue(abortError);
 
     global.fetch = fetchMock as typeof fetch;
 
-    await expect(apiCall('/health')).rejects.toMatchObject({
+    await expect(
+      apiCall('/health', {}, { maxRetries: 0 }) // prevent retry delays
+    ).rejects.toMatchObject({
       name: 'AbortError',
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('queues mutating requests while offline', async () => {
+    Object.defineProperty(global, 'navigator', {
+      value: { onLine: false },
+      configurable: true,
+    });
+
+    await expect(
+      apiCall('/verification/verify', {
+        method: 'POST',
+        body: JSON.stringify({ ok: true }),
+      })
+    ).rejects.toBeInstanceOf(OfflineActionQueuedError);
+
+    const stored = localStorageMock.getItem('agenticpay-offline-queue');
+    expect(stored).toBeTruthy();
+    expect(JSON.parse(stored as string)).toHaveLength(1);
   });
 });
