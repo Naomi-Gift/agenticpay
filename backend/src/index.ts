@@ -16,6 +16,7 @@ import { slaRouter } from './routes/sla.js';
 import { legacyRouter } from './routes/legacy.js';
 import { splitsRouter } from './routes/splits.js';
 import { refundsRouter } from './routes/refunds.js';
+import { allowancesRouter } from './routes/allowances.js';
 import { startJobs, getJobScheduler } from './jobs/index.js';
 import { errorHandler, notFoundHandler, AppError } from './middleware/errorHandler.js';
 import { messageQueue } from './services/queue.js';
@@ -231,6 +232,7 @@ apiV1Router.use('/sla', slaRouter);
 apiV1Router.use('/legacy', legacyRouter);
 apiV1Router.use('/splits', splitsRouter);
 apiV1Router.use('/refunds', refundsRouter);
+apiV1Router.use('/allowances', allowancesRouter);
 // Email delivery system
 apiV1Router.use('/emails', emailRouter);
 // Portfolio/wallet aggregation
